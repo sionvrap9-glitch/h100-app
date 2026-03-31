@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>H100 PRO PLUS</title>
+
+<link rel="manifest" href="manifest.json">
+
+<style>
+body {
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+    padding: 15px;
+}
+.container {
+    max-width: 420px;
+    margin: auto;
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 15px;
+}
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 8px;
+    border: none;
+}
+button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+    background: #22c55e;
+    border: none;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+}
+.historial {
+    margin-top: 15px;
+    font-size: 14px;
+}
+.card {
+    background: #334155;
+    padding: 10px;
+    margin: 5px 0;
+    border-radius: 10px;
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+<h2>🚚 H100 PRO PLUS</h2>
+
+<input type="text" id="cliente" placeholder="Nombre del cliente">
+<input type="number" id="km" placeholder="Kilómetros">
+<input type="number" id="consumo" placeholder="Km por litro">
+<input type="number" id="precioCombustible" placeholder="Precio combustible">
+<input type="number" id="chofer" placeholder="Pago chofer">
+<input type="number" id="aceite" placeholder="Aceite">
+<input type="number" id="otros" placeholder="Otros gastos">
+<input type="number" id="ganancia" placeholder="Ganancia %">
+
+<button onclick="calcular()">Calcular</button>
+<button onclick="guardar()">Guardar viaje</button>
+<button onclick="limpiar()">Limpiar historial</button>
+
+<div id="resultado"></div>
+
+<h3>📊 Historial</h3>
+<div class="historial" id="historial"></div>
+
+<h3>💰 Ganancia total: $<span id="totalGanancia">0</span></h3>
+
+</div>
+
+<script>
+let totalGanancia = 0;
+
+function calcular() {
+    let km = parseFloat(km.value || 0);
+    let consumo = parseFloat(consumo.value || 1);
+    let precioCombustible = parseFloat(precioCombustible.value || 0);
+    let chofer = parseFloat(chofer.value || 0);
+    let aceite = parseFloat(aceite.value || 0);
+    let otros = parseFloat(otros.value || 0);
+    let ganancia = parseFloat(ganancia.value || 0);
+
+    let litros = km / consumo;
+    let combustible = litros * precioCombustible;
+    let total = combustible + chofer + aceite + otros;
+    let final = total + (total * ganancia / 100);
+
+    resultado.innerHTML =
+        "💰 Costo: $" + total.toFixed(2) + "<br>" +
+        "📈 Cobrar: $" + final.toFixed(2);
+
+    return {total, final};
+}
+
+function guardar() {
+    let datos = calcular();
+    let cliente = document.getElementById("cliente").value || "Sin nombre";
+
+    let viaje = {
+        cliente,
+        costo: datos.total,
+        cobro: datos.final,
+        ganancia: datos.final - datos.total
+    };
+
+    let historial = JSON.parse(localStorage.getItem("viajes")) || [];
+    historial.push(viaje);
+    localStorage.setItem("viajes", JSON.stringify(historial));
+
+    mostrarHistorial();
+}
+
+function mostrarHistorial() {
+    let historial = JSON.parse(localStorage.getItem("viajes")) || [];
+    let contenedor = document.getElementById("historial");
+    contenedor.innerHTML = "";
+
+    totalGanancia = 0;
+
+    historial.forEach(v => {
+        totalGanancia += v.ganancia;
+
+        contenedor.innerHTML += `
+        <div class="card">
+            👤 ${v.cliente}<br>
+            💰 Cobrado: $${v.cobro.toFixed(2)}<br>
+            📈 Ganancia: $${v.ganancia.toFixed(2)}
+        </div>`;
+    });
+
+    document.getElementById("totalGanancia").innerText = totalGanancia.toFixed(2);
+}
+
+function limpiar() {
+    localStorage.removeItem("viajes");
+    mostrarHistorial();
+}
+
+mostrarHistorial();
+
+// service worker
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+}
+</script>
+
+</body>
+</html>
